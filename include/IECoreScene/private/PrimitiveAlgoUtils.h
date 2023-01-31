@@ -133,16 +133,8 @@ struct AverageValueFromVector
 	}
 };
 
-template< typename T > struct IsVectorDataDefined
-	: boost::mpl::and_
-	<
-		IECore::TypeTraits::IsSimpleTypedData< T >,
-		boost::mpl::not_< IECore::TypeTraits::IsSplineTypedData< T > >,
-		boost::mpl::not_< IECore::TypeTraits::IsTransformationMatrixTypedData< T > >,
-		boost::mpl::not_< IECore::TypeTraits::IsPathMatcherTypedData< T > >,
-		boost::mpl::not_< IECore::TypeTraits::IsDateTimeTypedData< T > >
-	>
-{};
+template<typename T>
+using IsTypedDataDefined = std::negation<std::is_void<typename IECore::TypedDataTraits<T>::DataHolder>>;
 
 struct FillVectorFromValue
 {
@@ -151,7 +143,7 @@ struct FillVectorFromValue
 	{}
 
 	template< typename T >
-	IECore::DataPtr operator()( const IECore::GeometricTypedData< T > *data, typename std::enable_if< IsVectorDataDefined< IECore::GeometricTypedData< T > >::value >::type *enabler = nullptr ) const
+	IECore::DataPtr operator()( const IECore::GeometricTypedData< T > *data, typename std::enable_if_t<IsTypedDataDefined<std::vector<T>>::value> *enabler = nullptr ) const
 	{
 		using VectorT = IECore::GeometricTypedData< std::vector< T > >;
 		typename VectorT::Ptr newData = new VectorT();
@@ -160,7 +152,7 @@ struct FillVectorFromValue
 	}
 
 	template< typename T >
-	IECore::DataPtr operator()( const IECore::TypedData< T > *data, typename std::enable_if< IsVectorDataDefined< IECore::TypedData< T > >::value >::type *enabler = nullptr ) const
+	IECore::DataPtr operator()( const IECore::TypedData< T > *data, typename std::enable_if_t<IsTypedDataDefined<std::vector<T>>::value> *enabler = nullptr ) const
 	{
 		using VectorT = IECore::TypedData< std::vector< T > >;
 		typename VectorT::Ptr newData = new VectorT();
