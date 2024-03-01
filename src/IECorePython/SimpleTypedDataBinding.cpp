@@ -195,13 +195,37 @@ string str<TYPE>( TYPE &x )																				\
 DEFINENUMERICSTRSPECIALISATION( bool );
 DEFINENUMERICSTRSPECIALISATION( int );
 DEFINENUMERICSTRSPECIALISATION( unsigned int );
-DEFINENUMERICSTRSPECIALISATION( float );
-DEFINENUMERICSTRSPECIALISATION( double );
 DEFINENUMERICSTRSPECIALISATION( half );
 DEFINENUMERICSTRSPECIALISATION( short );
 DEFINENUMERICSTRSPECIALISATION( unsigned short );
 DEFINENUMERICSTRSPECIALISATION( int64_t );
 DEFINENUMERICSTRSPECIALISATION( uint64_t );
+
+#define DEFINEFLOATSTRSPECIALISATION( TYPE ) \
+template<> IECOREPYTHON_API \
+string repr<TYPE>( TYPE &x ) \
+{ \
+	if( x == std::numeric_limits<TYPE>::infinity() ) \
+	{ \
+		return "float( 'inf' )"; \
+	} \
+	else if( x == -std::numeric_limits<TYPE>::infinity() ) \
+	{ \
+		return "float( '-inf' )"; \
+	} \
+	stringstream s; \
+	s << x; \
+	return s.str(); \
+} \
+\
+template<> IECOREPYTHON_API \
+string str<TYPE>( TYPE &x ) \
+{ \
+	return repr<TYPE>( x ); \
+}
+
+DEFINEFLOATSTRSPECIALISATION( float );
+DEFINEFLOATSTRSPECIALISATION( double );
 
 #define DEFINETYPEDDATASTRSPECIALISATION( TYPE )														\
 template<> IECOREPYTHON_API																				\

@@ -402,6 +402,18 @@ class BoolDataTest( unittest.TestCase ) :
 			self.assertEqual( d.value.p0, vt( 0, 0, 0 ) )
 			self.assertEqual( d.value.p1, vt( 1, 0, 0 ) )
 
+	def testInfRepr( self ) :
+
+		for value in [
+			IECore.FloatData( math.inf ),
+			IECore.FloatData( -math.inf ),
+			IECore.V3fData( imath.V3f( math.inf, -math.inf, math.inf ) ),
+			IECore.Color3fData( imath.Color3f( math.inf, 0, -math.inf ) ),
+			IECore.Color4fData( imath.Color4f( math.inf, 0, 1, -math.inf ) ),
+		] :
+			with self.subTest( value = value ) :
+				self.assertEqual( eval( repr( value ) ), value )
+
 	def tearDown( self ) :
 
 		if os.path.isfile( os.path.join( "test", "IECore", "o.fio" ) ):

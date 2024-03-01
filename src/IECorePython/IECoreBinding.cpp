@@ -66,11 +66,31 @@ namespace IECorePython
 template<> IECORE_EXPORT \
 std::string repr<VEC>( VEC &x )\
 {\
+	using BaseType = VEC::BaseType; \
 	std::stringstream s;\
 	s << "imath." << #VEC << "( ";\
 	for( unsigned i=0; i<VEC::dimensions(); i++ )\
 	{\
-		s << boost::lexical_cast<string>( x[i] );\
+		if constexpr ( std::is_floating_point_v<BaseType> ) \
+		{ \
+			if( x[i] == std::numeric_limits<BaseType>::infinity() ) \
+			{ \
+				s << "float( 'inf' )"; \
+			} \
+			else if( x[i] == -std::numeric_limits<BaseType>::infinity() ) \
+			{ \
+				s << "float( '-inf' )"; \
+			} \
+			else \
+			{ \
+				s << boost::lexical_cast<string>( x[i] ); \
+			} \
+		}\
+		else \
+		{ \
+			s << boost::lexical_cast<string>( x[i] ); \
+		} \
+		\
 		if( i!=VEC::dimensions()-1 )\
 		{\
 			s << ", ";\
@@ -133,42 +153,8 @@ DEFINEBOXSTRSPECIALISATION( Box3f );
 DEFINEBOXSTRSPECIALISATION( Box2d );
 DEFINEBOXSTRSPECIALISATION( Box3d );
 
-#define DEFINECOLSTRSPECIALISATION( COL )\
-\
-template<> IECORE_EXPORT \
-std::string repr<COL>( COL &x )\
-{\
-	std::stringstream s;\
-	s << "imath." << #COL << "( ";\
-	for( unsigned i=0; i<COL::dimensions(); i++ )\
-	{\
-		s << boost::lexical_cast<std::string>( x[i] );\
-		if( i!=COL::dimensions()-1 )\
-		{\
-			s << ", ";\
-		}\
-	}\
-	s << " )";\
-	return s.str();\
-}\
-\
-template<> IECORE_EXPORT \
-std::string str<COL>( COL &x )\
-{\
-	std::stringstream s;\
-	for( unsigned i=0; i<COL::dimensions(); i++ )\
-	{\
-		s << boost::lexical_cast<std::string>( x[i] );\
-		if( i!=COL::dimensions()-1 )\
-		{\
-			s << " ";\
-		}\
-	}\
-	return s.str();\
-}\
-
-DEFINECOLSTRSPECIALISATION( Color3f );
-DEFINECOLSTRSPECIALISATION( Color4f );
+DEFINEVECSTRSPECIALISATION( Color3f );
+DEFINEVECSTRSPECIALISATION( Color4f );
 
 /// \todo Handle rotation order
 #define DEFINEEULERSTRSPECIALISATION( EULER )\
