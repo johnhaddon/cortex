@@ -109,44 +109,28 @@ void CoordinateSystem::load( LoadContextPtr context )
 	ConstIndexedIOPtr container = context->container( staticTypeName(), v );
 	container->read( g_nameEntry, m_name );
 
-	// CoordinateSystem used to derive from the deprecated and removed StateRenderable
-	// holding additional transform information for the renderer. A better approach that is also
-	// used in Gaffer, the transform information is better stored as separate transform information.
-	// Cortex 10.6 also removed all DCC integrations, i.e. IECoreMaya, which stored, for example
-	// Locator transformation on the CoordinateSystem. We provide a way to still retrieve this
-	// information from old SceneCaches, although not fully transparent and backwards compatible.
-	// Clients of CoordinateSystem will need to be adjusted if needed.
+	// CoordinateSystem used to have a transform property, but that has
+	// been removed in favour of transforms being accessed independently
+	// of objects in SceneInterface (and Gaffer). If a legacy transform
+	// exists, load it and stash it as blind data for use by legacy tools.
 
-	// We look for a matrix entry somewhere underneath the CoordinateSystem, directly read it from
-	// there instead of loading an object and stash it in the BlindData.
+	ConstIndexedIOPtr matrixTransformContainer = container;
+	for( auto name : { "transform", "data", "MatrixTransform", "data" } )
+	{
+		matrixTransformContainer = matrixTransformContainer->subdirectory( name, IndexedIO::MissingBehaviour::NullIfMissing );
+		if( !matrixTransformContainer )
+		{
+			break;
+		}
+	}
+
 	const IndexedIO::EntryID matrixEntry( "matrix" );
-	Imath::M44f matrix;
-
-	std::function<void(ConstIndexedIOPtr)> findMatrixEntry = [&]( ConstIndexedIOPtr directory )
+	if( matrixTransformContainer && matrixTransformContainer->hasEntry( matrixEntry ) )
 	{
-		if( directory->hasEntry( matrixEntry ) )
-		{
-			float *f = matrix.getValue();
-			directory->read( matrixEntry, f, 16 );
-		}
-
-		IndexedIO::EntryIDList levelDirectories;
-		directory->entryIds( levelDirectories, IndexedIO::EntryType::Directory );
-
-		for ( auto levelDirectory : levelDirectories )
-		{
-			ConstIndexedIOPtr subdirectory = directory->subdirectory( levelDirectory, IndexedIO::MissingBehaviour::NullIfMissing );
-			if( subdirectory )
-			{
-			    findMatrixEntry( subdirectory );
-			}
-		}
-	};
-
-	findMatrixEntry( container );
-	if( matrix != Imath::identity44f )
-	{
-	    blindData()->writable()["LegacyTransform"] = new IECore::M44fData( matrix );
+		M44fDataPtr matrix = new M44fData;
+		float *f = matrix->writable().getValue();
+		matrixTransformContainer->read( matrixEntry, f, 16 );
+		blindData()->writable()["LegacyTransform"] = matrix;
 	}
 }
 
